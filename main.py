@@ -31,7 +31,7 @@ def get_df(_sql):
         st.error("osquery not run, please use `osquertctl start`")
         return []
 
-_sql = st.text_area("input sql here", key="_sql")
+_sql = st.text_area("input sql here", key="sql")
 if st.button("submit", key="submit"):
     st.session_state["res"] = get_df(_sql)
 
