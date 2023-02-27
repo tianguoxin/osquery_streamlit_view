@@ -11,45 +11,42 @@ st.set_page_config(
      initial_sidebar_state="expanded",
  )
 
-hide_streamlit_style = """
-<style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-</style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# You must know the Thrift socket path
-# For an installed and running system osqueryd, this is:
-#   Linux and macOS: /var/osquery/osquery.em
-#   FreeBSD: /var/run/osquery.em
-#   Windows: \\.\pipe\osquery.em
+def get_df(_sql):
+    # judge osqueryctl status
 
-# judge osqueryctl status
-if os.path.exists("/var/osquery/osquery.em"):
-    instance = osquery.ExtensionClient('/var/osquery/osquery.em')
-    instance.open()
-    client = instance.extension_client()
+    # You must know the Thrift socket path
+    # For an installed and running system osqueryd, this is:
+    #   Linux and macOS: /var/osquery/osquery.em
+    #   FreeBSD: /var/run/osquery.em
+    #   Windows: \\.\pipe\osquery.em
 
-    _sql = st.text_area("input sql here", key="_sql")
-    if st.button("submit", key="submit"):
-        res =  client.query(_sql).response
-        if res:
-            df = pd.DataFrame(res)
-            gb = GridOptionsBuilder.from_dataframe(df)
-            gb.configure_pagination()
-            gb.configure_side_bar()
-            gridOptions = gb.build()
-            grid_response = AgGrid(
-                df,
-                gridOptions=gridOptions,
-                height=800,
-                width=1000,
-                fit_columns_on_grid_load=True,
-                allow_unsafe_jscode=True,
-                enable_enterprise_modules=True
-            )
-        else:
-            st.info("find nothing...")
-else:
-    st.error("osquery not run, please use `osquertctl start`")
+    if os.path.exists("/var/osquery/osquery.em"):
+        instance = osquery.ExtensionClient('/var/osquery/osquery.em')
+        instance.open()
+        client = instance.extension_client()
+        res = client.query(_sql).response
+        return res
+    else:
+        st.error("osquery not run, please use `osquertctl start`")
+        return []
+
+_sql = st.text_area("input sql here", key="_sql")
+if st.button("submit", key="submit"):
+    st.session_state["res"] = get_df(_sql)
+
+if "res" in st.session_state:
+    df = pd.DataFrame(st.session_state["res"])
+    gb = GridOptionsBuilder.from_dataframe(df)
+    gb.configure_pagination()
+    gb.configure_side_bar()
+    gridOptions = gb.build()
+    grid_response = AgGrid(
+        df,
+        gridOptions=gridOptions,
+        height=800,
+        width=1000,
+        fit_columns_on_grid_load=True,
+        allow_unsafe_jscode=True,
+        enable_enterprise_modules=True
+    )
