@@ -33,6 +33,7 @@ def get_df(_sql):
 
 _sql = st.text_area("input sql here", key="sql")
 if st.button("submit", key="submit"):
+    # cache
     st.session_state["res"] = get_df(_sql)
 
 if "res" in st.session_state:
